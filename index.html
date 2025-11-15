@@ -256,10 +256,6 @@
             border-radius: 4px;
         }
         
-        .view-btn {
-            background: #2ed573;
-        }
-        
         .delete-btn {
             background: #ff4757;
         }
@@ -340,16 +336,6 @@
             margin-bottom: 15px;
         }
         
-        .date-navigation {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .date-navigation input {
-            flex: 1;
-        }
-        
         @media (min-width: 768px) {
             .container {
                 max-width: 800px;
@@ -421,8 +407,6 @@
                             <div class="summary-label">今日总额(元)</div>
                         </div>
                     </div>
-                    
-                    <button id="clearToday" class="secondary">清空今日记录</button>
                 </div>
             </div>
             
@@ -431,11 +415,6 @@
                     <div class="month-selector">
                         <select id="yearSelect"></select>
                         <select id="monthSelect"></select>
-                    </div>
-                    
-                    <div class="date-navigation">
-                        <input type="date" id="specificDate" placeholder="选择具体日期">
-                        <button id="clearDateFilter" class="secondary">清除日期筛选</button>
                     </div>
                     
                     <div class="form-group room-filter">
@@ -477,10 +456,6 @@
                             <div class="stat-label">元</div>
                         </div>
                     </div>
-                    
-                    <div id="statsDetails" style="margin-top: 20px;">
-                        <div class="no-data">暂无详细统计</div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -500,7 +475,6 @@
         const todayRoomsContainer = document.getElementById('todayRooms');
         const todayCountEl = document.getElementById('todayCount');
         const todayTotalEl = document.getElementById('todayTotal');
-        const clearTodayBtn = document.getElementById('clearToday');
         const yearSelect = document.getElementById('yearSelect');
         const monthSelect = document.getElementById('monthSelect');
         const monthlyRecordsContainer = document.getElementById('monthlyRecords');
@@ -513,10 +487,7 @@
         const statsTotalAmount = document.getElementById('statsTotalAmount');
         const statsAvgPerDay = document.getElementById('statsAvgPerDay');
         const statsMaxDay = document.getElementById('statsMaxDay');
-        const statsDetails = document.getElementById('statsDetails');
         const roomFilter = document.getElementById('roomFilter');
-        const specificDateInput = document.getElementById('specificDate');
-        const clearDateFilterBtn = document.getElementById('clearDateFilter');
         
         // 设置默认日期为今天
         const now = new Date();
@@ -611,13 +582,6 @@
             
             // 监听房间号筛选
             roomFilter.addEventListener('input', displayMonthlyRecords);
-            
-            // 监听具体日期筛选
-            specificDateInput.addEventListener('change', displayMonthlyRecords);
-            clearDateFilterBtn.addEventListener('click', () => {
-                specificDateInput.value = '';
-                displayMonthlyRecords();
-            });
         }
         
         // 添加房间记录
@@ -744,34 +708,11 @@
             });
         }
         
-        // 清空今日记录
-        function clearToday() {
-            if (todayRooms.length === 0) {
-                alert('今天没有记录可清空');
-                return;
-            }
-            
-            if (confirm('确定要清空今天的记录吗？')) {
-                // 从月记录中删除今天的记录
-                const today = dateInput.value;
-                if (allRecords[today]) {
-                    delete allRecords[today];
-                    localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
-                }
-                
-                todayRooms = [];
-                updateTodayRoomsDisplay();
-                displayMonthlyRecords();
-                updateStats();
-            }
-        }
-        
         // 显示月度记录
         function displayMonthlyRecords() {
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
             const filterRoom = roomFilter.value.trim();
-            const specificDate = specificDateInput.value;
             
             // 获取该月的所有记录
             const monthRecords = {};
@@ -781,11 +722,6 @@
             Object.keys(allRecords).forEach(date => {
                 const recordDate = new Date(date);
                 if (recordDate.getFullYear() === year && recordDate.getMonth() + 1 === month) {
-                    // 筛选具体日期
-                    if (specificDate && date !== specificDate) {
-                        return;
-                    }
-                    
                     // 筛选房间号
                     const filteredRooms = allRecords[date].rooms.filter(room => 
                         !filterRoom || room.roomNumber.includes(filterRoom)
@@ -851,7 +787,7 @@
             // 添加总计行
             html += `
                     <tr class="total-row">
-                        <td>${specificDate ? '日总计' : '月总计'}</td>
+                        <td>月总计</td>
                         <td>${monthTotalRooms} 个房间</td>
                         <td>${monthTotalAmount.toFixed(2)}</td>
                         <td></td>
@@ -924,7 +860,6 @@
             let monthTotalRooms = 0;
             let monthTotalAmount = 0;
             let maxDayAmount = 0;
-            let maxDayDate = '';
             let daysWithRecords = 0;
             
             Object.keys(allRecords).forEach(date => {
@@ -937,7 +872,6 @@
                     
                     if (allRecords[date].totalAmount > maxDayAmount) {
                         maxDayAmount = allRecords[date].totalAmount;
-                        maxDayDate = date;
                     }
                 }
             });
@@ -947,49 +881,6 @@
             statsTotalAmount.textContent = monthTotalAmount.toFixed(2);
             statsAvgPerDay.textContent = daysWithRecords > 0 ? (monthTotalAmount / daysWithRecords).toFixed(2) : '0';
             statsMaxDay.textContent = maxDayAmount.toFixed(2);
-            
-            // 更新详细统计
-            if (Object.keys(monthRecords).length === 0) {
-                statsDetails.innerHTML = '<div class="no-data">该月份没有记录</div>';
-                return;
-            }
-            
-            let detailsHtml = `
-                <div class="day-details">
-                    <h3>${year}年${month}月详细统计</h3>
-                    <div class="room-list">
-            `;
-            
-            // 按日期排序
-            const sortedDates = Object.keys(monthRecords).sort((a, b) => new Date(b) - new Date(a));
-            
-            sortedDates.forEach(date => {
-                const record = monthRecords[date];
-                detailsHtml += `
-                    <div class="room-item">
-                        <span>${date}</span>
-                        <span>${record.totalRooms} 个房间</span>
-                        <span>${record.totalAmount.toFixed(2)} 元</span>
-                    </div>
-                `;
-            });
-            
-            detailsHtml += `
-                    </div>
-                    <div class="summary">
-                        <div class="summary-item">
-                            <div class="summary-value">${daysWithRecords}</div>
-                            <div class="summary-label">有记录天数</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value">${maxDayDate}</div>
-                            <div class="summary-label">最高收入日</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            statsDetails.innerHTML = detailsHtml;
         }
         
         // 初始化应用
@@ -1002,7 +893,6 @@
             
             // 添加事件监听
             addRoomBtn.addEventListener('click', addRoom);
-            clearTodayBtn.addEventListener('click', clearToday);
             
             // 支持按Enter键添加房间
             roomNumberInput.addEventListener('keypress', function(e) {
