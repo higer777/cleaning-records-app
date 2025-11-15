@@ -336,6 +336,19 @@
             color: #666;
         }
         
+        .time-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .time-input-group input {
+            flex: 1;
+        }
+        
+        .room-filter {
+            margin-bottom: 15px;
+        }
+        
         @media (min-width: 768px) {
             .container {
                 max-width: 800px;
@@ -382,6 +395,13 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="time">时间</label>
+                        <div class="time-input-group">
+                            <input type="time" id="time">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="roomNumber">房间号</label>
                         <input type="text" id="roomNumber" placeholder="输入房间号">
                     </div>
@@ -408,7 +428,6 @@
                         </div>
                     </div>
                     
-                    <button id="saveDay">保存今日记录</button>
                     <button id="clearToday" class="secondary">清空今日记录</button>
                 </div>
             </div>
@@ -418,6 +437,11 @@
                     <div class="month-selector">
                         <select id="yearSelect"></select>
                         <select id="monthSelect"></select>
+                    </div>
+                    
+                    <div class="form-group room-filter">
+                        <label for="roomFilter">按房间号筛选</label>
+                        <input type="text" id="roomFilter" placeholder="输入房间号进行筛选">
                     </div>
                     
                     <div id="monthlyRecords">
@@ -471,13 +495,13 @@
         
         // DOM元素
         const dateInput = document.getElementById('date');
+        const timeInput = document.getElementById('time');
         const roomNumberInput = document.getElementById('roomNumber');
         const amountInput = document.getElementById('amount');
         const addRoomBtn = document.getElementById('addRoom');
         const todayRoomsContainer = document.getElementById('todayRooms');
         const todayCountEl = document.getElementById('todayCount');
         const todayTotalEl = document.getElementById('todayTotal');
-        const saveDayBtn = document.getElementById('saveDay');
         const clearTodayBtn = document.getElementById('clearToday');
         const yearSelect = document.getElementById('yearSelect');
         const monthSelect = document.getElementById('monthSelect');
@@ -492,10 +516,12 @@
         const statsAvgPerDay = document.getElementById('statsAvgPerDay');
         const statsMaxDay = document.getElementById('statsMaxDay');
         const statsDetails = document.getElementById('statsDetails');
+        const roomFilter = document.getElementById('roomFilter');
         
-        // 设置默认日期为今天
-        const today = new Date();
-        dateInput.valueAsDate = today;
+        // 设置默认日期和时间为当前时间
+        const now = new Date();
+        dateInput.valueAsDate = now;
+        timeInput.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         
         // 初始化标签页
         function initTabs() {
@@ -545,8 +571,8 @@
         
         // 初始化年份和月份选择器
         function initDateSelectors() {
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth() + 1;
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
             
             // 清空现有选项
             yearSelect.innerHTML = '';
@@ -554,8 +580,8 @@
             statsYearSelect.innerHTML = '';
             statsMonthSelect.innerHTML = '';
             
-            // 添加年份选项（从2020年到当前年份）
-            for (let year = 2020; year <= currentYear; year++) {
+            // 添加年份选项（从2025年到当前年份）
+            for (let year = 2025; year <= currentYear; year++) {
                 const option = document.createElement('option');
                 option.value = year;
                 option.textContent = year + '年';
@@ -583,16 +609,25 @@
             monthSelect.addEventListener('change', displayMonthlyRecords);
             statsYearSelect.addEventListener('change', updateStats);
             statsMonthSelect.addEventListener('change', updateStats);
+            
+            // 监听房间号筛选
+            roomFilter.addEventListener('input', displayMonthlyRecords);
         }
         
         // 添加房间记录
         function addRoom() {
             const date = dateInput.value;
+            const time = timeInput.value;
             const roomNumber = roomNumberInput.value.trim();
             const amount = parseFloat(amountInput.value);
             
             if (!date) {
                 alert('请选择日期');
+                return;
+            }
+            
+            if (!time) {
+                alert('请选择时间');
                 return;
             }
             
@@ -606,11 +641,34 @@
                 return;
             }
             
-            // 添加到今天房间列表
-            todayRooms.push({
+            // 创建时间戳
+            const timestamp = `${date} ${time}`;
+            
+            // 创建记录对象
+            const record = {
                 roomNumber,
-                amount
-            });
+                amount,
+                timestamp
+            };
+            
+            // 添加到今天房间列表
+            todayRooms.push(record);
+            
+            // 自动保存到月记录中
+            if (!allRecords[date]) {
+                allRecords[date] = {
+                    rooms: [],
+                    totalRooms: 0,
+                    totalAmount: 0
+                };
+            }
+            
+            allRecords[date].rooms.push(record);
+            allRecords[date].totalRooms++;
+            allRecords[date].totalAmount += amount;
+            
+            // 保存到本地存储
+            localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
             
             // 更新显示
             updateTodayRoomsDisplay();
@@ -619,6 +677,10 @@
             roomNumberInput.value = '';
             amountInput.value = '';
             roomNumberInput.focus();
+            
+            // 更新当前时间
+            const currentTime = new Date();
+            timeInput.value = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
         }
         
         // 更新今天房间显示
@@ -636,7 +698,10 @@
             todayRooms.forEach((room, index) => {
                 html += `
                     <div class="room-item">
-                        <span>${room.roomNumber}</span>
+                        <div>
+                            <div>${room.roomNumber}</div>
+                            <div style="font-size: 0.8rem; color: #666;">${room.timestamp.split(' ')[1]}</div>
+                        </div>
                         <span>${room.amount}元</span>
                         <span class="delete-room" data-index="${index}">删除</span>
                     </div>
@@ -652,51 +717,39 @@
             document.querySelectorAll('.delete-room').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-index'));
+                    const roomToDelete = todayRooms[index];
+                    
+                    // 从今天记录中删除
                     todayRooms.splice(index, 1);
+                    
+                    // 从月记录中删除
+                    const date = roomToDelete.timestamp.split(' ')[0];
+                    if (allRecords[date]) {
+                        const roomIndex = allRecords[date].rooms.findIndex(
+                            r => r.timestamp === roomToDelete.timestamp && 
+                                 r.roomNumber === roomToDelete.roomNumber
+                        );
+                        
+                        if (roomIndex !== -1) {
+                            allRecords[date].rooms.splice(roomIndex, 1);
+                            allRecords[date].totalRooms--;
+                            allRecords[date].totalAmount -= roomToDelete.amount;
+                            
+                            // 如果这一天没有记录了，删除这一天的记录
+                            if (allRecords[date].rooms.length === 0) {
+                                delete allRecords[date];
+                            }
+                            
+                            // 保存到本地存储
+                            localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
+                        }
+                    }
+                    
                     updateTodayRoomsDisplay();
+                    displayMonthlyRecords();
+                    updateStats();
                 });
             });
-        }
-        
-        // 保存今日记录
-        function saveDay() {
-            const date = dateInput.value;
-            
-            if (!date) {
-                alert('请选择日期');
-                return;
-            }
-            
-            if (todayRooms.length === 0) {
-                alert('今天没有添加任何房间记录');
-                return;
-            }
-            
-            // 检查是否已有该日期的记录
-            if (allRecords[date]) {
-                if (!confirm('该日期已有记录，是否覆盖？')) {
-                    return;
-                }
-            }
-            
-            // 保存记录
-            allRecords[date] = {
-                rooms: [...todayRooms],
-                totalRooms: todayRooms.length,
-                totalAmount: todayRooms.reduce((sum, room) => sum + room.amount, 0)
-            };
-            
-            // 保存到本地存储
-            localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
-            
-            // 重置今天房间列表
-            todayRooms = [];
-            updateTodayRoomsDisplay();
-            
-            // 更新月度记录显示
-            displayMonthlyRecords();
-            
-            alert('记录保存成功！');
         }
         
         // 清空今日记录
@@ -707,8 +760,17 @@
             }
             
             if (confirm('确定要清空今天的记录吗？')) {
+                // 从月记录中删除今天的记录
+                const today = dateInput.value;
+                if (allRecords[today]) {
+                    delete allRecords[today];
+                    localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
+                }
+                
                 todayRooms = [];
                 updateTodayRoomsDisplay();
+                displayMonthlyRecords();
+                updateStats();
             }
         }
         
@@ -716,6 +778,7 @@
         function displayMonthlyRecords() {
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
+            const filterRoom = roomFilter.value.trim();
             
             // 获取该月的所有记录
             const monthRecords = {};
@@ -725,9 +788,21 @@
             Object.keys(allRecords).forEach(date => {
                 const recordDate = new Date(date);
                 if (recordDate.getFullYear() === year && recordDate.getMonth() + 1 === month) {
-                    monthRecords[date] = allRecords[date];
-                    monthTotalRooms += allRecords[date].totalRooms;
-                    monthTotalAmount += allRecords[date].totalAmount;
+                    // 筛选房间号
+                    const filteredRooms = allRecords[date].rooms.filter(room => 
+                        !filterRoom || room.roomNumber.includes(filterRoom)
+                    );
+                    
+                    if (filteredRooms.length > 0) {
+                        monthRecords[date] = {
+                            rooms: filteredRooms,
+                            totalRooms: filteredRooms.length,
+                            totalAmount: filteredRooms.reduce((sum, room) => sum + room.amount, 0)
+                        };
+                        
+                        monthTotalRooms += filteredRooms.length;
+                        monthTotalAmount += filteredRooms.reduce((sum, room) => sum + room.amount, 0);
+                    }
                 }
             });
             
@@ -741,40 +816,45 @@
                 <table class="records-table">
                     <thead>
                         <tr>
-                            <th>日期</th>
-                            <th>房间数量</th>
-                            <th>总金额(元)</th>
+                            <th>日期时间</th>
+                            <th>房间号</th>
+                            <th>金额(元)</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
             
-            // 按日期排序
+            // 按日期和时间排序
             const sortedDates = Object.keys(monthRecords).sort((a, b) => new Date(b) - new Date(a));
             
             sortedDates.forEach(date => {
-                const record = monthRecords[date];
-                html += `
-                    <tr>
-                        <td>${date}</td>
-                        <td>${record.totalRooms}</td>
-                        <td>${record.totalAmount.toFixed(2)}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="view-btn" data-date="${date}">详情</button>
-                                <button class="delete-btn" data-date="${date}">删除</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                // 对每个日期的房间记录按时间排序
+                const sortedRooms = monthRecords[date].rooms.sort((a, b) => 
+                    new Date(b.timestamp) - new Date(a.timestamp)
+                );
+                
+                sortedRooms.forEach(room => {
+                    html += `
+                        <tr>
+                            <td>${room.timestamp}</td>
+                            <td>${room.roomNumber}</td>
+                            <td>${room.amount.toFixed(2)}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="delete-btn" data-date="${date}" data-timestamp="${room.timestamp}" data-room="${room.roomNumber}">删除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
             });
             
             // 添加总计行
             html += `
                     <tr class="total-row">
                         <td>月总计</td>
-                        <td>${monthTotalRooms}</td>
+                        <td>${monthTotalRooms} 个房间</td>
                         <td>${monthTotalAmount.toFixed(2)}</td>
                         <td></td>
                     </tr>
@@ -784,73 +864,57 @@
             
             monthlyRecordsContainer.innerHTML = html;
             
-            // 添加查看详情和删除事件监听
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const date = this.getAttribute('data-date');
-                    viewDayDetails(date);
-                });
-            });
-            
+            // 添加删除事件监听
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const date = this.getAttribute('data-date');
-                    deleteRecord(date);
+                    const timestamp = this.getAttribute('data-timestamp');
+                    const roomNumber = this.getAttribute('data-room');
+                    deleteRecord(date, timestamp, roomNumber);
                 });
             });
         }
         
-        // 查看某日详情
-        function viewDayDetails(date) {
-            const record = allRecords[date];
-            if (!record) return;
-            
-            let detailsHtml = `
-                <div class="day-details">
-                    <h3>${date} 打扫详情</h3>
-                    <div class="room-list">
-            `;
-            
-            record.rooms.forEach(room => {
-                detailsHtml += `
-                    <div class="room-item">
-                        <span>${room.roomNumber}</span>
-                        <span>${room.amount}元</span>
-                    </div>
-                `;
-            });
-            
-            detailsHtml += `
-                    </div>
-                    <div class="summary">
-                        <div class="summary-item">
-                            <div class="summary-value">${record.totalRooms}</div>
-                            <div class="summary-label">房间总数</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-value">${record.totalAmount.toFixed(2)}</div>
-                            <div class="summary-label">总金额(元)</div>
-                        </div>
-                    </div>
-                    <button id="closeDetails" class="secondary" style="margin-top: 15px;">关闭</button>
-                </div>
-            `;
-            
-            monthlyRecordsContainer.innerHTML = detailsHtml;
-            
-            document.getElementById('closeDetails').addEventListener('click', displayMonthlyRecords);
-        }
-        
         // 删除记录
-        function deleteRecord(date) {
-            if (!confirm(`确定要删除 ${date} 的记录吗？`)) {
+        function deleteRecord(date, timestamp, roomNumber) {
+            if (!confirm(`确定要删除 ${timestamp} ${roomNumber} 的记录吗？`)) {
                 return;
             }
             
-            delete allRecords[date];
-            localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
-            displayMonthlyRecords();
-            updateStats();
+            // 从月记录中删除
+            if (allRecords[date]) {
+                const roomIndex = allRecords[date].rooms.findIndex(
+                    r => r.timestamp === timestamp && r.roomNumber === roomNumber
+                );
+                
+                if (roomIndex !== -1) {
+                    const amount = allRecords[date].rooms[roomIndex].amount;
+                    allRecords[date].rooms.splice(roomIndex, 1);
+                    allRecords[date].totalRooms--;
+                    allRecords[date].totalAmount -= amount;
+                    
+                    // 如果这一天没有记录了，删除这一天的记录
+                    if (allRecords[date].rooms.length === 0) {
+                        delete allRecords[date];
+                    }
+                    
+                    // 保存到本地存储
+                    localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
+                    
+                    // 从今天记录中删除（如果存在）
+                    const todayIndex = todayRooms.findIndex(
+                        r => r.timestamp === timestamp && r.roomNumber === roomNumber
+                    );
+                    
+                    if (todayIndex !== -1) {
+                        todayRooms.splice(todayIndex, 1);
+                        updateTodayRoomsDisplay();
+                    }
+                    
+                    displayMonthlyRecords();
+                    updateStats();
+                }
+            }
         }
         
         // 更新统计信息
@@ -941,7 +1005,6 @@
             
             // 添加事件监听
             addRoomBtn.addEventListener('click', addRoom);
-            saveDayBtn.addEventListener('click', saveDay);
             clearTodayBtn.addEventListener('click', clearToday);
             
             // 支持按Enter键添加房间
@@ -951,6 +1014,13 @@
             
             amountInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') addRoom();
+            });
+            
+            // 当日记录变化时更新今日记录显示
+            dateInput.addEventListener('change', function() {
+                // 清空今日记录显示
+                todayRooms = [];
+                updateTodayRoomsDisplay();
             });
         }
         
