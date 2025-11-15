@@ -336,17 +336,18 @@
             color: #666;
         }
         
-        .time-input-group {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .time-input-group input {
-            flex: 1;
-        }
-        
         .room-filter {
             margin-bottom: 15px;
+        }
+        
+        .date-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .date-navigation input {
+            flex: 1;
         }
         
         @media (min-width: 768px) {
@@ -395,13 +396,6 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="time">时间</label>
-                        <div class="time-input-group">
-                            <input type="time" id="time">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
                         <label for="roomNumber">房间号</label>
                         <input type="text" id="roomNumber" placeholder="输入房间号">
                     </div>
@@ -437,6 +431,11 @@
                     <div class="month-selector">
                         <select id="yearSelect"></select>
                         <select id="monthSelect"></select>
+                    </div>
+                    
+                    <div class="date-navigation">
+                        <input type="date" id="specificDate" placeholder="选择具体日期">
+                        <button id="clearDateFilter" class="secondary">清除日期筛选</button>
                     </div>
                     
                     <div class="form-group room-filter">
@@ -495,7 +494,6 @@
         
         // DOM元素
         const dateInput = document.getElementById('date');
-        const timeInput = document.getElementById('time');
         const roomNumberInput = document.getElementById('roomNumber');
         const amountInput = document.getElementById('amount');
         const addRoomBtn = document.getElementById('addRoom');
@@ -517,11 +515,12 @@
         const statsMaxDay = document.getElementById('statsMaxDay');
         const statsDetails = document.getElementById('statsDetails');
         const roomFilter = document.getElementById('roomFilter');
+        const specificDateInput = document.getElementById('specificDate');
+        const clearDateFilterBtn = document.getElementById('clearDateFilter');
         
-        // 设置默认日期和时间为当前时间
+        // 设置默认日期为今天
         const now = new Date();
         dateInput.valueAsDate = now;
-        timeInput.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         
         // 初始化标签页
         function initTabs() {
@@ -612,22 +611,23 @@
             
             // 监听房间号筛选
             roomFilter.addEventListener('input', displayMonthlyRecords);
+            
+            // 监听具体日期筛选
+            specificDateInput.addEventListener('change', displayMonthlyRecords);
+            clearDateFilterBtn.addEventListener('click', () => {
+                specificDateInput.value = '';
+                displayMonthlyRecords();
+            });
         }
         
         // 添加房间记录
         function addRoom() {
             const date = dateInput.value;
-            const time = timeInput.value;
             const roomNumber = roomNumberInput.value.trim();
             const amount = parseFloat(amountInput.value);
             
             if (!date) {
                 alert('请选择日期');
-                return;
-            }
-            
-            if (!time) {
-                alert('请选择时间');
                 return;
             }
             
@@ -641,14 +641,11 @@
                 return;
             }
             
-            // 创建时间戳
-            const timestamp = `${date} ${time}`;
-            
             // 创建记录对象
             const record = {
                 roomNumber,
                 amount,
-                timestamp
+                date
             };
             
             // 添加到今天房间列表
@@ -677,10 +674,6 @@
             roomNumberInput.value = '';
             amountInput.value = '';
             roomNumberInput.focus();
-            
-            // 更新当前时间
-            const currentTime = new Date();
-            timeInput.value = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
         }
         
         // 更新今天房间显示
@@ -700,7 +693,6 @@
                     <div class="room-item">
                         <div>
                             <div>${room.roomNumber}</div>
-                            <div style="font-size: 0.8rem; color: #666;">${room.timestamp.split(' ')[1]}</div>
                         </div>
                         <span>${room.amount}元</span>
                         <span class="delete-room" data-index="${index}">删除</span>
@@ -723,10 +715,10 @@
                     todayRooms.splice(index, 1);
                     
                     // 从月记录中删除
-                    const date = roomToDelete.timestamp.split(' ')[0];
+                    const date = roomToDelete.date;
                     if (allRecords[date]) {
                         const roomIndex = allRecords[date].rooms.findIndex(
-                            r => r.timestamp === roomToDelete.timestamp && 
+                            r => r.date === roomToDelete.date && 
                                  r.roomNumber === roomToDelete.roomNumber
                         );
                         
@@ -779,6 +771,7 @@
             const year = parseInt(yearSelect.value);
             const month = parseInt(monthSelect.value);
             const filterRoom = roomFilter.value.trim();
+            const specificDate = specificDateInput.value;
             
             // 获取该月的所有记录
             const monthRecords = {};
@@ -788,6 +781,11 @@
             Object.keys(allRecords).forEach(date => {
                 const recordDate = new Date(date);
                 if (recordDate.getFullYear() === year && recordDate.getMonth() + 1 === month) {
+                    // 筛选具体日期
+                    if (specificDate && date !== specificDate) {
+                        return;
+                    }
+                    
                     // 筛选房间号
                     const filteredRooms = allRecords[date].rooms.filter(room => 
                         !filterRoom || room.roomNumber.includes(filterRoom)
@@ -816,7 +814,7 @@
                 <table class="records-table">
                     <thead>
                         <tr>
-                            <th>日期时间</th>
+                            <th>日期</th>
                             <th>房间号</th>
                             <th>金额(元)</th>
                             <th>操作</th>
@@ -825,24 +823,24 @@
                     <tbody>
             `;
             
-            // 按日期和时间排序
+            // 按日期排序
             const sortedDates = Object.keys(monthRecords).sort((a, b) => new Date(b) - new Date(a));
             
             sortedDates.forEach(date => {
-                // 对每个日期的房间记录按时间排序
+                // 对每个日期的房间记录按房间号排序
                 const sortedRooms = monthRecords[date].rooms.sort((a, b) => 
-                    new Date(b.timestamp) - new Date(a.timestamp)
+                    a.roomNumber.localeCompare(b.roomNumber)
                 );
                 
                 sortedRooms.forEach(room => {
                     html += `
                         <tr>
-                            <td>${room.timestamp}</td>
+                            <td>${date}</td>
                             <td>${room.roomNumber}</td>
                             <td>${room.amount.toFixed(2)}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="delete-btn" data-date="${date}" data-timestamp="${room.timestamp}" data-room="${room.roomNumber}">删除</button>
+                                    <button class="delete-btn" data-date="${date}" data-room="${room.roomNumber}">删除</button>
                                 </div>
                             </td>
                         </tr>
@@ -853,7 +851,7 @@
             // 添加总计行
             html += `
                     <tr class="total-row">
-                        <td>月总计</td>
+                        <td>${specificDate ? '日总计' : '月总计'}</td>
                         <td>${monthTotalRooms} 个房间</td>
                         <td>${monthTotalAmount.toFixed(2)}</td>
                         <td></td>
@@ -868,23 +866,22 @@
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const date = this.getAttribute('data-date');
-                    const timestamp = this.getAttribute('data-timestamp');
                     const roomNumber = this.getAttribute('data-room');
-                    deleteRecord(date, timestamp, roomNumber);
+                    deleteRecord(date, roomNumber);
                 });
             });
         }
         
         // 删除记录
-        function deleteRecord(date, timestamp, roomNumber) {
-            if (!confirm(`确定要删除 ${timestamp} ${roomNumber} 的记录吗？`)) {
+        function deleteRecord(date, roomNumber) {
+            if (!confirm(`确定要删除 ${date} ${roomNumber} 的记录吗？`)) {
                 return;
             }
             
             // 从月记录中删除
             if (allRecords[date]) {
                 const roomIndex = allRecords[date].rooms.findIndex(
-                    r => r.timestamp === timestamp && r.roomNumber === roomNumber
+                    r => r.roomNumber === roomNumber
                 );
                 
                 if (roomIndex !== -1) {
@@ -903,7 +900,7 @@
                     
                     // 从今天记录中删除（如果存在）
                     const todayIndex = todayRooms.findIndex(
-                        r => r.timestamp === timestamp && r.roomNumber === roomNumber
+                        r => r.date === date && r.roomNumber === roomNumber
                     );
                     
                     if (todayIndex !== -1) {
