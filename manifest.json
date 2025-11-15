@@ -1,0 +1,22 @@
+{
+    "name": "房间打扫记录系统",
+    "short_name": "打扫记录",
+    "description": "记录每天打扫的房间和金额",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#6a11cb",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiM2YTExY2IiLz4KPHBhdGggZD0iTTk2IDQ0TDE0NCA5Mkg0OEw5NiA0NFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik03NiA2OEgxMTZWNjRINzZWNjhaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNjAgMTE2VjEwOEgxMzJWMTE2SDYwWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTY4IDE0NEgxMjRWMTM2SDY4VjE0NFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNDgiIGZpbGw9IiM2YTExY2IiLz4KPHBhdGggZD0iTTI1NiAxMTZMMzg0IDI0NEgxMjhMMjU2IDExNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yMDIgMTc2SDMxMFYxNjRIMjAyVjE3NloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNjAgMzA0VjI4OEgzNTJWMzA0SDE2MFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xODQgMzg0SDMyOFYzNjBIMTg0VjM4NFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+        }
+    ]
+}

@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房间打扫记录系统</title>
+    <meta name="theme-color" content="#6a11cb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="打扫记录">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .install-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        
+        .app-content {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+        
+        .input-section {
+            padding: 20px 15px;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+        
+        .display-section {
+            padding: 20px 15px;
+            background: #f9f9f9;
+            flex: 1;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+            background: white;
+        }
+        
+        input:focus, select:focus {
+            border-color: #6a11cb;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-top: 10px;
+        }
+        
+        .room-list {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fafafa;
+        }
+        
+        .room-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+        }
+        
+        .room-item:last-child {
+            border-bottom: none;
+        }
+        
+        .delete-room {
+            color: #ff4757;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 71, 87, 0.1);
+        }
+        
+        .summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .summary-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #6a11cb;
+        }
+        
+        .summary-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .month-selector {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .month-selector select {
+            flex: 1;
+        }
+        
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .records-table th, .records-table td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        
+        .records-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .records-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .total-row {
+            font-weight: 700;
+            background-color: #f0f5ff;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            background: white;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .action-buttons button {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        
+        .view-btn {
+            background: #2ed573;
+        }
+        
+        .delete-btn {
+            background: #ff4757;
+        }
+        
+        .day-details {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .day-details h3 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button.active {
+            color: #6a11cb;
+            border-bottom-color: #6a11cb;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #6a11cb;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            }
+            
+            .app-content {
+                flex-direction: row;
+            }
+            
+            .input-section {
+                flex: 1;
+                border-right: 1px solid #eee;
+                border-bottom: none;
+            }
+            
+            .display-section {
+                flex: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>房间打扫记录系统</h1>
+            <p class="subtitle">记录每日打扫房间，计算收入总额</p>
+            <div class="install-btn" id="installButton" style="display: none;">安装应用</div>
+        </header>
+        
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="input">记录</button>
+            <button class="tab-button" data-tab="history">历史</button>
+            <button class="tab-button" data-tab="stats">统计</button>
+        </div>
+        
+        <div class="app-content">
+            <div class="tab-content active" id="input">
+                <div class="input-section">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="roomNumber">房间号</label>
+                        <input type="text" id="roomNumber" placeholder="输入房间号">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount">打扫金额 (元)</label>
+                        <input type="number" id="amount" placeholder="输入打扫金额" min="1">
+                    </div>
+                    
+                    <button id="addRoom">添加房间记录</button>
+                    
+                    <div class="room-list" id="todayRooms">
+                        <div class="no-data">今天还没有添加房间记录</div>
+                    </div>
+                    
+                    <div class="summary">
+                        <div class="summary-item">
+                            <div class="summary-value" id="todayCount">0</div>
+                            <div class="summary-label">今日打扫数</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value" id="todayTotal">0</div>
+                            <div class="summary-label">今日总额(元)</div>
+                        </div>
+                    </div>
+                    
+                    <button id="saveDay">保存今日记录</button>
+                    <button id="clearToday" class="secondary">清空今日记录</button>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="history">
+                <div class="display-section">
+                    <div class="month-selector">
+                        <select id="yearSelect"></select>
+                        <select id="monthSelect"></select>
+                    </div>
+                    
+                    <div id="monthlyRecords">
+                        <div class="no-data">请选择月份查看记录</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="stats">
+                <div class="display-section">
+                    <div class="month-selector">
+                        <select id="statsYearSelect"></select>
+                        <select id="statsMonthSelect"></select>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">本月打扫总数</div>
+                            <div class="stat-value" id="statsTotalRooms">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">本月总收入</div>
+                            <div class="stat-value" id="statsTotalAmount">0</div>
+                            <div class="stat-label">元</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">平均每天</div>
+                            <div class="stat-value" id="statsAvgPerDay">0</div>
+                            <div class="stat-label">元/天</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">最高收入日</div>
+                            <div class="stat-value" id="statsMaxDay">0</div>
+                            <div class="stat-label">元</div>
+                        </div>
+                    </div>
+                    
+                    <div id="statsDetails" style="margin-top: 20px;">
+                        <div class="no-data">暂无详细统计</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据
+        let todayRooms = [];
+        let allRecords = JSON.parse(localStorage.getItem('cleaningRecords')) || {};
+        let deferredPrompt;
+        
+        // DOM元素
+        const dateInput = document.getElementById('date');
+        const roomNumberInput = document.getElementById('roomNumber');
+        const amountInput = document.getElementById('amount');
+        const addRoomBtn = document.getElementById('addRoom');
+        const todayRoomsContainer = document.getElementById('todayRooms');
+        const todayCountEl = document.getElementById('todayCount');
+        const todayTotalEl = document.getElementById('todayTotal');
+        const saveDayBtn = document.getElementById('saveDay');
+        const clearTodayBtn = document.getElementById('clearToday');
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        const monthlyRecordsContainer = document.getElementById('monthlyRecords');
+        const installButton = document.getElementById('installButton');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const statsYearSelect = document.getElementById('statsYearSelect');
+        const statsMonthSelect = document.getElementById('statsMonthSelect');
+        const statsTotalRooms = document.getElementById('statsTotalRooms');
+        const statsTotalAmount = document.getElementById('statsTotalAmount');
+        const statsAvgPerDay = document.getElementById('statsAvgPerDay');
+        const statsMaxDay = document.getElementById('statsMaxDay');
+        const statsDetails = document.getElementById('statsDetails');
+        
+        // 设置默认日期为今天
+        const today = new Date();
+        dateInput.valueAsDate = today;
+        
+        // 初始化标签页
+        function initTabs() {
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+                    
+                    // 更新按钮状态
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // 更新内容显示
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === tabId) {
+                            content.classList.add('active');
+                        }
+                    });
+                    
+                    // 如果是历史或统计标签，刷新数据
+                    if (tabId === 'history') {
+                        displayMonthlyRecords();
+                    } else if (tabId === 'stats') {
+                        updateStats();
+                    }
+                });
+            });
+        }
+        
+        // PWA安装提示
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'block';
+            
+            installButton.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        installButton.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        });
+        
+        // 初始化年份和月份选择器
+        function initDateSelectors() {
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1;
+            
+            // 清空现有选项
+            yearSelect.innerHTML = '';
+            monthSelect.innerHTML = '';
+            statsYearSelect.innerHTML = '';
+            statsMonthSelect.innerHTML = '';
+            
+            // 添加年份选项（从2020年到当前年份）
+            for (let year = 2020; year <= currentYear; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '年';
+                if (year === currentYear) option.selected = true;
+                yearSelect.appendChild(option);
+                
+                const statsOption = option.cloneNode(true);
+                statsYearSelect.appendChild(statsOption);
+            }
+            
+            // 添加月份选项
+            for (let month = 1; month <= 12; month++) {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = month + '月';
+                if (month === currentMonth) option.selected = true;
+                monthSelect.appendChild(option);
+                
+                const statsOption = option.cloneNode(true);
+                statsMonthSelect.appendChild(statsOption);
+            }
+            
+            // 监听选择器变化
+            yearSelect.addEventListener('change', displayMonthlyRecords);
+            monthSelect.addEventListener('change', displayMonthlyRecords);
+            statsYearSelect.addEventListener('change', updateStats);
+            statsMonthSelect.addEventListener('change', updateStats);
+        }
+        
+        // 添加房间记录
+        function addRoom() {
+            const date = dateInput.value;
+            const roomNumber = roomNumberInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            
+            if (!date) {
+                alert('请选择日期');
+                return;
+            }
+            
+            if (!roomNumber) {
+                alert('请输入房间号');
+                return;
+            }
+            
+            if (!amount || amount <= 0) {
+                alert('请输入有效的金额');
+                return;
+            }
+            
+            // 添加到今天房间列表
+            todayRooms.push({
+                roomNumber,
+                amount
+            });
+            
+            // 更新显示
+            updateTodayRoomsDisplay();
+            
+            // 清空输入
+            roomNumberInput.value = '';
+            amountInput.value = '';
+            roomNumberInput.focus();
+        }
+        
+        // 更新今天房间显示
+        function updateTodayRoomsDisplay() {
+            if (todayRooms.length === 0) {
+                todayRoomsContainer.innerHTML = '<div class="no-data">今天还没有添加房间记录</div>';
+                todayCountEl.textContent = '0';
+                todayTotalEl.textContent = '0';
+                return;
+            }
+            
+            let html = '';
+            let totalAmount = 0;
+            
+            todayRooms.forEach((room, index) => {
+                html += `
+                    <div class="room-item">
+                        <span>${room.roomNumber}</span>
+                        <span>${room.amount}元</span>
+                        <span class="delete-room" data-index="${index}">删除</span>
+                    </div>
+                `;
+                totalAmount += room.amount;
+            });
+            
+            todayRoomsContainer.innerHTML = html;
+            todayCountEl.textContent = todayRooms.length;
+            todayTotalEl.textContent = totalAmount.toFixed(2);
+            
+            // 添加删除事件监听
+            document.querySelectorAll('.delete-room').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    todayRooms.splice(index, 1);
+                    updateTodayRoomsDisplay();
+                });
+            });
+        }
+        
+        // 保存今日记录
+        function saveDay() {
+            const date = dateInput.value;
+            
+            if (!date) {
+                alert('请选择日期');
+                return;
+            }
+            
+            if (todayRooms.length === 0) {
+                alert('今天没有添加任何房间记录');
+                return;
+            }
+            
+            // 检查是否已有该日期的记录
+            if (allRecords[date]) {
+                if (!confirm('该日期已有记录，是否覆盖？')) {
+                    return;
+                }
+            }
+            
+            // 保存记录
+            allRecords[date] = {
+                rooms: [...todayRooms],
+                totalRooms: todayRooms.length,
+                totalAmount: todayRooms.reduce((sum, room) => sum + room.amount, 0)
+            };
+            
+            // 保存到本地存储
+            localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
+            
+            // 重置今天房间列表
+            todayRooms = [];
+            updateTodayRoomsDisplay();
+            
+            // 更新月度记录显示
+            displayMonthlyRecords();
+            
+            alert('记录保存成功！');
+        }
+        
+        // 清空今日记录
+        function clearToday() {
+            if (todayRooms.length === 0) {
+                alert('今天没有记录可清空');
+                return;
+            }
+            
+            if (confirm('确定要清空今天的记录吗？')) {
+                todayRooms = [];
+                updateTodayRoomsDisplay();
+            }
+        }
+        
+        // 显示月度记录
+        function displayMonthlyRecords() {
+            const year = parseInt(yearSelect.value);
+            const month = parseInt(monthSelect.value);
+            
+            // 获取该月的所有记录
+            const monthRecords = {};
+            let monthTotalRooms = 0;
+            let monthTotalAmount = 0;
+            
+            Object.keys(allRecords).forEach(date => {
+                const recordDate = new Date(date);
+                if (recordDate.getFullYear() === year && recordDate.getMonth() + 1 === month) {
+                    monthRecords[date] = allRecords[date];
+                    monthTotalRooms += allRecords[date].totalRooms;
+                    monthTotalAmount += allRecords[date].totalAmount;
+                }
+            });
+            
+            // 显示记录
+            if (Object.keys(monthRecords).length === 0) {
+                monthlyRecordsContainer.innerHTML = '<div class="no-data">该月份没有记录</div>';
+                return;
+            }
+            
+            let html = `
+                <table class="records-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>房间数量</th>
+                            <th>总金额(元)</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // 按日期排序
+            const sortedDates = Object.keys(monthRecords).sort((a, b) => new Date(b) - new Date(a));
+            
+            sortedDates.forEach(date => {
+                const record = monthRecords[date];
+                html += `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${record.totalRooms}</td>
+                        <td>${record.totalAmount.toFixed(2)}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="view-btn" data-date="${date}">详情</button>
+                                <button class="delete-btn" data-date="${date}">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            // 添加总计行
+            html += `
+                    <tr class="total-row">
+                        <td>月总计</td>
+                        <td>${monthTotalRooms}</td>
+                        <td>${monthTotalAmount.toFixed(2)}</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            `;
+            
+            monthlyRecordsContainer.innerHTML = html;
+            
+            // 添加查看详情和删除事件监听
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const date = this.getAttribute('data-date');
+                    viewDayDetails(date);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const date = this.getAttribute('data-date');
+                    deleteRecord(date);
+                });
+            });
+        }
+        
+        // 查看某日详情
+        function viewDayDetails(date) {
+            const record = allRecords[date];
+            if (!record) return;
+            
+            let detailsHtml = `
+                <div class="day-details">
+                    <h3>${date} 打扫详情</h3>
+                    <div class="room-list">
+            `;
+            
+            record.rooms.forEach(room => {
+                detailsHtml += `
+                    <div class="room-item">
+                        <span>${room.roomNumber}</span>
+                        <span>${room.amount}元</span>
+                    </div>
+                `;
+            });
+            
+            detailsHtml += `
+                    </div>
+                    <div class="summary">
+                        <div class="summary-item">
+                            <div class="summary-value">${record.totalRooms}</div>
+                            <div class="summary-label">房间总数</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value">${record.totalAmount.toFixed(2)}</div>
+                            <div class="summary-label">总金额(元)</div>
+                        </div>
+                    </div>
+                    <button id="closeDetails" class="secondary" style="margin-top: 15px;">关闭</button>
+                </div>
+            `;
+            
+            monthlyRecordsContainer.innerHTML = detailsHtml;
+            
+            document.getElementById('closeDetails').addEventListener('click', displayMonthlyRecords);
+        }
+        
+        // 删除记录
+        function deleteRecord(date) {
+            if (!confirm(`确定要删除 ${date} 的记录吗？`)) {
+                return;
+            }
+            
+            delete allRecords[date];
+            localStorage.setItem('cleaningRecords', JSON.stringify(allRecords));
+            displayMonthlyRecords();
+            updateStats();
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            const year = parseInt(statsYearSelect.value);
+            const month = parseInt(statsMonthSelect.value);
+            
+            // 获取该月的所有记录
+            const monthRecords = {};
+            let monthTotalRooms = 0;
+            let monthTotalAmount = 0;
+            let maxDayAmount = 0;
+            let maxDayDate = '';
+            let daysWithRecords = 0;
+            
+            Object.keys(allRecords).forEach(date => {
+                const recordDate = new Date(date);
+                if (recordDate.getFullYear() === year && recordDate.getMonth() + 1 === month) {
+                    monthRecords[date] = allRecords[date];
+                    monthTotalRooms += allRecords[date].totalRooms;
+                    monthTotalAmount += allRecords[date].totalAmount;
+                    daysWithRecords++;
+                    
+                    if (allRecords[date].totalAmount > maxDayAmount) {
+                        maxDayAmount = allRecords[date].totalAmount;
+                        maxDayDate = date;
+                    }
+                }
+            });
+            
+            // 更新统计卡片
+            statsTotalRooms.textContent = monthTotalRooms;
+            statsTotalAmount.textContent = monthTotalAmount.toFixed(2);
+            statsAvgPerDay.textContent = daysWithRecords > 0 ? (monthTotalAmount / daysWithRecords).toFixed(2) : '0';
+            statsMaxDay.textContent = maxDayAmount.toFixed(2);
+            
+            // 更新详细统计
+            if (Object.keys(monthRecords).length === 0) {
+                statsDetails.innerHTML = '<div class="no-data">该月份没有记录</div>';
+                return;
+            }
+            
+            let detailsHtml = `
+                <div class="day-details">
+                    <h3>${year}年${month}月详细统计</h3>
+                    <div class="room-list">
+            `;
+            
+            // 按日期排序
+            const sortedDates = Object.keys(monthRecords).sort((a, b) => new Date(b) - new Date(a));
+            
+            sortedDates.forEach(date => {
+                const record = monthRecords[date];
+                detailsHtml += `
+                    <div class="room-item">
+                        <span>${date}</span>
+                        <span>${record.totalRooms} 个房间</span>
+                        <span>${record.totalAmount.toFixed(2)} 元</span>
+                    </div>
+                `;
+            });
+            
+            detailsHtml += `
+                    </div>
+                    <div class="summary">
+                        <div class="summary-item">
+                            <div class="summary-value">${daysWithRecords}</div>
+                            <div class="summary-label">有记录天数</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-value">${maxDayDate}</div>
+                            <div class="summary-label">最高收入日</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            statsDetails.innerHTML = detailsHtml;
+        }
+        
+        // 初始化应用
+        function initApp() {
+            initDateSelectors();
+            initTabs();
+            updateTodayRoomsDisplay();
+            displayMonthlyRecords();
+            updateStats();
+            
+            // 添加事件监听
+            addRoomBtn.addEventListener('click', addRoom);
+            saveDayBtn.addEventListener('click', saveDay);
+            clearTodayBtn.addEventListener('click', clearToday);
+            
+            // 支持按Enter键添加房间
+            roomNumberInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addRoom();
+            });
+            
+            amountInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addRoom();
+            });
+        }
+        
+        // 启动应用
+        initApp();
+    </script>
+</body>
+</html>
